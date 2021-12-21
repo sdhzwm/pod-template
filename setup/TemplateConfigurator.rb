@@ -4,88 +4,28 @@ require 'colored2'
 module Pod
   class TemplateConfigurator
 
-    attr_reader :pod_name, :pods_for_podfile, :prefixes, :test_example_file, :username, :email
+    attr_reader :pod_name, :pod_languge, :pods_for_podfile, :prefixes, :test_example_file, :username, :email
 
-    def initialize(pod_name)
+    #初始化方法
+    def initialize(pod_name, pod_languge)
       @pod_name = pod_name
+      @pod_languge = pod_languge
       @pods_for_podfile = []
       @prefixes = []
       @message_bank = MessageBank.new(self)
     end
 
-    def ask(question)
-      answer = ""
-      loop do
-        puts "\n#{question}?"
-
-        @message_bank.show_prompt
-        answer = gets.chomp
-
-        break if answer.length > 0
-
-        print "\nYou need to provide an answer."
-      end
-      answer
-    end
-
-    def ask_with_answers(question, possible_answers)
-
-      print "\n#{question}? ["
-
-      print_info = Proc.new {
-
-        possible_answers_string = possible_answers.each_with_index do |answer, i|
-           _answer = (i == 0) ? answer.underlined : answer
-           print " " + _answer
-           print(" /") if i != possible_answers.length-1
-        end
-        print " ]\n"
-      }
-      print_info.call
-
-      answer = ""
-
-      loop do
-        @message_bank.show_prompt
-        answer = gets.downcase.chomp
-
-        answer = "yes" if answer == "y"
-        answer = "no" if answer == "n"
-
-        # default to first answer
-        if answer == ""
-          answer = possible_answers[0].downcase
-          print answer.yellow
-        end
-
-        break if possible_answers.map { |a| a.downcase }.include? answer
-
-        print "\nPossible answers are ["
-        print_info.call
-      end
-
-      answer
-    end
-
+    #运行主程序
     def run
       @message_bank.welcome_message
 
-      platform = self.ask_with_answers("What platform do you want to use?", ["iOS", "macOS"]).to_sym
-
-      case platform
-        when :macos
-          ConfigureMacOSSwift.perform(configurator: self)
-        when :ios
-          framework = self.ask_with_answers("What language do you want to use?", ["Swift", "ObjC"]).to_sym
-          case framework
-            when :swift
-              ConfigureSwift.perform(configurator: self)
-
-            when :objc
-              ConfigureIOS.perform(configurator: self)
-          end
+      case pod_languge.downcase.to_sym
+        when :swift
+          ConfigureSwift.perform(configurator: self)
+        when :objc
+          ConfigureIOS.perform(configurator: self)
       end
-
+      
       replace_variables_in_files
       clean_template_files
       rename_template_files
@@ -95,10 +35,9 @@ module Pod
       ensure_carthage_compatibility
       reinitialize_git_repo
       run_pod_install
+      
 
       @message_bank.farewell_message
-    end
-
     #----------------------------------------#
 
     def ensure_carthage_compatibility

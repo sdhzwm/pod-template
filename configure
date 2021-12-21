@@ -9,14 +9,6 @@ end
 # README替换
 FileUtils.mv "POD_README.md", "README.md"
 
-# 温馨提示
-puts ''
-puts '------------------ Welcome && Useage------------------'
-puts ''
-puts 'if create OC Project, " pod lib create ProjectDemo ObjC --template-url="https://github.com/xiayuanquan/pod-template" " '.yellow
-puts 'if create Swift Project, " pod lib create ProjectDemo Swift --template-url="https://github.com/xiayuanquan/pod-template" " '.yellow
-puts ''
-
 # 获取参数
 puts ''
 puts '------------------ It is will Running ----------------'
