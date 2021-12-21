@@ -101,9 +101,10 @@ module Pod
       tests.gsub!("${TEST_EXAMPLE}", File.read(content_path) )
       File.open(tests_path, "w") { |file| file.puts tests }
     end
-
+        
     def rename_classes_folder
-        File.rename("NAME.podspec", @pod_name + ".podspec")
+      File.rename("NAME.podspec", @pod_name + ".podspec")
+      FileUtils.mv "Pod", @pod_name
     end
 
     def reinitialize_git_repo
