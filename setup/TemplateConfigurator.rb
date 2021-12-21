@@ -36,8 +36,8 @@ module Pod
       reinitialize_git_repo
       run_pod_install
       
-
       @message_bank.farewell_message
+    end
     #----------------------------------------#
 
     def ensure_carthage_compatibility
