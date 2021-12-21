@@ -6,9 +6,6 @@ Dir[File.join($current_dir, "setup/*.rb")].each do |file|
   require_relative(file)
 end
 
-# README替换
-FileUtils.mv "POD_README.md", "README.md"
-
 # 获取参数
 puts ''
 puts '------------------ It is will Running ----------------'
