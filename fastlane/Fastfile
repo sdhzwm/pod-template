@@ -1,0 +1,85 @@
+desc 'czpod 用来自动化升级维护私有库'
+lane :czpod do |options|
+
+  pod_version = options[:version]
+  pod_desc    = options[:desc]
+  pod_repoName    = options[:repoName]
+
+  spec = read_podspec
+  pod_name = spec["name"]
+ 
+  spec_path   = "#{pod_name}.podspec"
+  
+  if pod_name.nil? || pod_name.empty? || pod_version.nil? || pod_version.empty?
+    UI.message("❌ 项目名称和版本号是必需的参数")
+    exit
+  end
+
+  UI.message("👉 开始发布组件: #{pod_name} 新版本为: #{pod_version}")
+
+  git_pull(only_tags: true)
+# 确认是 master分支
+  ensure_git_branch
+# 修改 podspec 中版本
+  version_bump_podspec(path: spec_path, version_number: pod_version)
+# 提交修改
+  git_add(path: '.')
+
+  begin
+    if pod_desc.nil? || pod_desc.empty?
+      git_commit(path: '.', message: "release #{pod_version}")
+    else
+      git_commit(path: '.', message: pod_desc)
+    end
+  rescue
+    error_message = "#{$!}"
+    UI.message("⚠️ commit error:#{error_message}")
+    unless error_message.include?("nothing to commit, working tree clean")
+      exit
+    end
+    UI.message("本地代码已提交，调过提交步骤")
+  end
+
+  push_to_git_remote
+
+  if git_tag_exists(tag: pod_version)
+      UI.message("Tag #{pod_version} 已经存在，删除该 Tag 💥")
+      remove_git_tag(tag: pod_version)
+  end
+  # 添加 tag
+  add_git_tag(tag: pod_version)
+  # 提交tag
+  push_git_tags
+
+#---------------------------------校验与推送操作------------------------------------------------------------------------#
+czsource = "http://172.16.69.171/ios/iosspecs.git"
+osource = "https://github.com/CocoaPods/Specs.git"
+
+
+# 验证spec 文件
+# CZSpecs 为本地的仓库名称，建议全部修改为这个名字
+#---------------------------------大部分场景用的------------------#
+pod_lib_lint(sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+
+ if pod_repoName.nil? || pod_repoName.empty?
+    pod_push(path: spec_path, repo: "CZSpecs", sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+else
+    pod_push(path: spec_path, repo: "#{pod_repoName}", sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+end
+
+
+#---------------------------------跳过验证 pod 是否可以导入------------------#
+#pod_lib_lint(sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+#pod_push(path: spec_path, repo: "CZSpecs", sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+
+#pod_lib_lint(sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+#pod_push(path: spec_path, repo: "CZSpecs", sources: [czsource,osource], allow_warnings: true, verbose: true,skip_import_validation:true)
+
+#---------------------------------包含静态库的-  当然 也可以和 skip_import_validation 组合使用-----------------#
+#pod_lib_lint(sources: [czsource,osource], allow_warnings: true, verbose: true,use_libraries:true)
+#pod_push(path: spec_path, repo: "CZSpecs", sources: [czsource,osource], allow_warnings: true, verbose: true,use_libraries:true)
+
+# wm: 如果以上未包含全部，则请移步  http://docs.fastlane.tools/actions/pod_lib_lint/ 查看对应的参数
+
+
+end
